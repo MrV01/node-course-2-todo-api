@@ -12,7 +12,9 @@ Docs: http://mongoosejs.com/docs/guide.html
 
 1. Install  Mongoose  in node-todo-api project.
 https://www.npmjs.com/package/mongoose
-npm install mongoose@4.11.5 --save
+npm install mongoose@4.10.8 --save  -save-exact
+At the moment of the testing mongoose@4.11.5 was not stable . See discussion below.
+NPM install command DOCS: https://docs.npmjs.com/cli/install
 
 Mongoose Models DOC: http://mongoosejs.com/docs/models.html
 
@@ -58,3 +60,12 @@ process.on('SIGINT', function() {
   });
 });
 //////////////////////////////////////////////////////////////////////////////////////////
+
+2. Install ExpressJS and Body-Parser npm modules.
+
+https://www.npmjs.com/package/express
+https://www.npmjs.com/package/body-parser
+
+npm i express@4.15.3 body-parser@1.17.2  --save
+
+3. HTTP status reference:  https://httpstatuses.com/ 

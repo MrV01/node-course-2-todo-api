@@ -1,90 +1,61 @@
 
-// Load Mongoose.  Attention!!!  var instead of const
-var mongoose = require('mongoose');
+//
+// Task:  Refactoring server.js file.
+// Models and configurations supposed to be relocated to separate files.
+// Express route handlers supposed to be here, in serve.js
+//
 
-// Configuration variables.
-const mongodbConnectionStr = 'mongodb://192.168.99.100:32770/TodoApp';
+var express = require('express');
+var bodyParser = require('body-parser');
 
-// We  prefer Promises. Originally comes from third party library, therefore we must liet it know
-// which implementation of Promise  we would like to use.
-mongoose.Promise = global.Promise;
-mongoose.connect(mongodbConnectionStr);
 
-// Best practice from http://theholmesoffice.com/mongoose-connection-best-practice/
-// CONNECTION EVENTS
-// When successfully connected
-mongoose.connection.on('connected', function () {
-  console.log('Mongoose default connection open to ' + mongodbConnectionStr );
-});
+//
+//  New server/db  directory of
+//            mongoose.js
+//  New server/models directory with models. One model per file:
+//         server/models/todo.js
+//         server/models/user.js
+//
 
-// If the connection throws an error
-mongoose.connection.on('error',function (err) {
-  console.log('Mongoose default connection error: ' + err);
-});
+// Load Mongoose.  Attention!!!  var instead of const. We'll need to test it eventually
+var {mongoose} = require('./db/mongoose');   // ES6 feature of de-structuring
+// wierd fact: Mongoose minify and lowercases collection name: Todo -> todo in mongodb, so on
 
-// When the connection is disconnected
-mongoose.connection.on('disconnected', function () {
-  console.log('Mongoose default connection disconnected');
-});
+//
+// Create Model for everything we would like to store.
+//  Mongoose  Model has tons of specifications/configurations
+//
+var{Todo} = require('./models/todo');
+var{User} = require('./models/user');
 
-// If the Node process ends, close the Mongoose connection
-process.on('SIGINT', function() {
-  mongoose.connection.close(function () {
-    console.log('Mongoose default connection disconnected through app termination');
-    process.exit(0);
+//  Service endpoints POST/todos
+//  server.js  should contain  only Express ( or other HTTP)  routes.
+
+var app = express();
+//
+// CRUD operations routes
+//
+app.use(bodyParser.json());
+
+app.post('/todos', (req,res) => {
+  // console.log(req.body);
+  var todo = new Todo({
+    text: req.body.text,
+    completed: req.body.completed,  // added by me to see what will happens: It works
+    completedAt: req.body.completedAt  // added by me to see what will happen: It works
+    // database successfully updated in all cases.
+    // Unless there are validator's exceptions :-)
+    // GIT the version, goto sleep.
+  });
+
+  todo.save().then((doc) => { // successfully
+      res.send(doc);
+  },  (e) => {   // failure
+      res.status(400).send(e);  // cheatshit of code selections:   https://httpstatuses.com/
   });
 });
 
-// End of   Best practice from http://theholmesoffice.com/mongoose-connection-best-practice
 
-// Create Model for everything we would like to store.
-//  Mongoose  Model has tons of specifications/ configurations
-// wierd fact: Mongoose minify and lowercases collection name: Todo -> todo in mongodb
-var Todo = mongoose.model('Todo', {  // Very basic cofig here see docs for many other features.
-   text: {
-     type: String
-   },
-   completed: {
-     type: Boolean
-   },
-   completedAt: {
-     type: Number
-   }
+app.listen(3000, () => {
+  console.log('Started on Port 3000');
 });
-
-// Creating new todo DEMO
-var newTodo = new Todo( {
-  text: 'Cook Dinner, and Breakfast'
-});
-
-newTodo.save().then((doc) => {
-  console.log("Saved todo", JSON.stringify(doc, undefined, 2));
-}, (error) => {
-  console.log("Unable to save Todo");
-});
-
-        // node server\server.js
-        // Saved todo { __v: 0, text: 'Cook Dinner', _id: 597ecba392bfe61954adf199 }
-
-// __v: 0   Is internal Mogoose  version number. Keeps track of models changes over time.
-
-/// Challege : Fill out all three fields.
-var newTodo2 = new Todo( {
-  text: 'Goto Sleep',
-  completed: false,
-  completedAt: 1
-});
-
-newTodo2.save().then((doc) => {
-  console.log("Saved todo 2 ", JSON.stringify(doc, undefined, 2));
-}, (error) => {
-  console.log("Unable to save Todo 2",error);
-});
-
-        // λ node server\server.js
-        // Saved todo { __v: 0, text: 'Cook Dinner', _id: 597ece048e837a1c3cee693e }
-        // Saved todo 2 { __v: 0,
-        //   text: 'Goto Sleep',
-        //   completed: false,
-        //   completedAt: 1,
-        //   _id: 597ece048e837a1c3cee693f }
