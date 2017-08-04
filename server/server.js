@@ -16,6 +16,7 @@ var bodyParser = require('body-parser');
 //         server/models/todo.js
 //         server/models/user.js
 //
+const {ObjectID} = require('mongodb') ;   // for validation of the _id import mongoDB driver. Method:
 
 // Load Mongoose.  Attention!!!  var instead of const. We'll need to test it eventually
 var {mongoose} = require('./db/mongoose');   // ES6 feature of de-structuring
@@ -44,6 +45,7 @@ app.post('/todos', (req,res) => {
     text: req.body.text,
     completed: req.body.completed,  // added by me to see what will happens: It works
     completedAt: req.body.completedAt  // added by me to see what will happen: It works
+
     // database successfully updated in all cases.
     // Unless there are validator's exceptions :-)
     // GIT the version, goto sleep.
@@ -73,6 +75,46 @@ app.get('/todos',      (req,res) => {
      // Send ( from Postman ) request:   GET localhost:3000/todos
      //               Responce:
      //                             { "todos": [] }
+
+//
+///  New paragraph: How to fetch individual ID.
+// GET /todos/59848628ba4e4e0e3c5c4f5b     -  route to fetch individual _Id  59848628ba4e4e0e3c5c4f5b
+//   part of the  URL is dynamic
+app.get('/todos/:id', (req, res) => {
+   var id = req.params.id;   // got the id variable from GET HTTP request.
+  //  res.send(req.params);    // DEBUG: variable id should be initialized by dynamic id  in req.params object.
+  // Valid id using isValid
+  if( !ObjectID.isValid(id)) {
+       console.log(`ObjectID.isValid?  Id ${id} not valid`);
+       return res.status(404).send({});// Status 404 , and  send back empty set
+  };
+  console.log(`ObjectID.isValid?  Id ${id} is valid`);
+    // 404 - send back empty set
+
+    Todo.findById(id).then((todo) => {
+      if(!todo) {
+          console.log(`Error: ID ${id} todo is not found`);
+          return res.status(404).send();// Status 404 , and  send back empty set
+      }
+        console.log('Todo findById ', todo);
+        res.send({todo});   // send back ES6  shortcut of { "todo" : todo}    }).catch((e) => {
+        return res.status(400).send(req.body);
+    });
+
+  // findById
+    // success
+        // if todo - send it back
+        // if no todo - send back  404 with an empty body
+    // error
+        // 400 - and send empty body back
+});
+
+// Run from cmd.exe    -     nodemon server/server.js
+// And run Postman  to generate GET requests.
+//  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
+//
+
+
 
 
 app.listen(3000, () => {
