@@ -37,6 +37,7 @@ var app = express();
 //
 app.use(bodyParser.json());
 
+// POST    /todos route
 app.post('/todos', (req,res) => {
   // console.log(req.body);
   var todo = new Todo({
@@ -47,13 +48,31 @@ app.post('/todos', (req,res) => {
     // Unless there are validator's exceptions :-)
     // GIT the version, goto sleep.
   });
-
+  // Save to the collection of MongoDB
   todo.save().then((doc) => { // successfully
-      res.send(doc);
+      res.send(doc);  // send HTTP  responce back
   },  (e) => {   // failure
       res.status(400).send(e);  // cheatshit of code selections:   https://httpstatuses.com/
   });
-});
+});// POST /todos
+
+// GET /todos route
+app.get('/todos',      (req,res) => {
+  Todo.find().then((todos)  => {
+      res.send({todos});   // send back ES6  shortcut of { "todos" : todos}  Object contains "todos" array of todos
+  }, (e) => {
+      res.status(400).send(e);   // send  back 400 (not found) error
+  });
+}); // GET /todos
+
+      // Run program.
+      // λ node server\server.js
+      // Started on Port 3000
+      // Mongoose default connection open to mongodb://192.168.99.100:32768/TodoApp
+     //
+     // Send ( from Postman ) request:   GET localhost:3000/todos
+     //               Responce:
+     //                             { "todos": [] }
 
 
 app.listen(3000, () => {
