@@ -58,12 +58,12 @@ app.post('/todos', (req,res) => {
   });
 });// POST /todos
 
-// GET /todos route
+// GET /todos  - route
 app.get('/todos',      (req,res) => {
   Todo.find().then((todos)  => {
-      res.send({todos});   // send back ES6  shortcut of { "todos" : todos}  Object contains "todos" array of todos
+      return res.send({todos});   // send back ES6  shortcut of { "todos" : todos}  Object contains "todos" array of todos
   }, (e) => {
-      res.status(400).send(e);   // send  back 400 (not found) error
+      return res.status(400).send(e);   // send  back 400 (not found) error
   });
 }); // GET /todos
 
@@ -85,20 +85,20 @@ app.get('/todos/:id', (req, res) => {
   //  res.send(req.params);    // DEBUG: variable id should be initialized by dynamic id  in req.params object.
   // Valid id using isValid
   if( !ObjectID.isValid(id)) {
-       console.log(`ObjectID.isValid?  Id ${id} not valid`);
+       // console.log(`ObjectID.isValid?  Id ${id} not valid`);
        return res.status(404).send({});// Status 404 , and  send back empty set
   };
-  console.log(`ObjectID.isValid?  Id ${id} is valid`);
+  // console.log(`ObjectID.isValid?  Id ${id} is valid`);
     // 404 - send back empty set
 
     Todo.findById(id).then((todo) => {
       if(!todo) {
-          console.log(`Error: ID ${id} todo is not found`);
+            // console.log(`Error: ID ${id} todo is not found`);
           return res.status(404).send();// Status 404 , and  send back empty set
       }
-        console.log('Todo findById ', todo);
+        // console.log('Todo findById ', todo);
         res.send({todo});   // send back ES6  shortcut of { "todo" : todo}    }).catch((e) => {
-        return res.status(400).send(req.body);
+        return res.status(400).send();
     });
 
   // findById
@@ -113,8 +113,6 @@ app.get('/todos/:id', (req, res) => {
 // And run Postman  to generate GET requests.
 //  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
 //
-
-
 
 
 app.listen(3000, () => {
