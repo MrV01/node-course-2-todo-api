@@ -33,6 +33,9 @@ var{User} = require('./models/user');
 //  server.js  should contain  only Express ( or other HTTP)  routes.
 
 var app = express();
+// For deployment on Heroku. Adjust port number.
+const port = process.env.PORT || 3000;
+
 //
 // CRUD operations routes
 //
@@ -115,8 +118,8 @@ app.get('/todos/:id', (req, res) => {
 //
 
 
-app.listen(3000, () => {
-  console.log('Started on Port 3000');
+app.listen(port, () => {
+  console.log(`Started up at Port ${port}`);
 });
 
 module.exports = {app};  // For testing purposes
