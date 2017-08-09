@@ -5,10 +5,7 @@
 var mongoose = require('mongoose');
 
 // Configuration variables. Mongo DB is remote or local?
-const mongodbConnectionStr = process.env.PORT ?  // using PORT  variable to distinquish remote or local mongoDB
-    'mongodb://test1:Hjk12345@ds027825.mlab.com:27825/test001'  // mLab test001  Sandbox
-  :
-    'mongodb://192.168.99.100:32768/TodoApp';  // local docker container
+const mongodbConnectionStr =  process.env.MONGODB_URI  ||   'mongodb://192.168.99.100:32768/TodoApp';  // local docker container
 
 // We  prefer Promises. Originally comes from third party library, therefore we must let Mongoose know
 // which implementation of Promise  we would like to use. (Embedded global.Promise at this time)
