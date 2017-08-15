@@ -1,14 +1,16 @@
 
-//
+//// Run from cmd.exe    -     nodemon server/server.js
+// And run Postman  to generate GET / POST/ DELETE /PATCH requests.
+//  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
+// Push to Heroku command:  git push heroku master
+
 // Task:  Refactoring server.js file.
 // Models and configurations supposed to be relocated to separate files.
 // Express route handlers supposed to be here, in serve.js
 //
-
-var express = require('express');
-var bodyParser = require('body-parser');
-
-
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
 //
 //  New server/db  directory of
 //            mongoose.js
@@ -18,6 +20,7 @@ var bodyParser = require('body-parser');
 //
 const {ObjectID} = require('mongodb') ;   // Native MongoDB driver,
                                                         //for validation of the _id import mongoDB driver. Method:
+
 // Load Mongoose.  Attention!!!  var instead of const. We'll need to unit test it with Mocha
 var {mongoose} = require('./db/mongoose');   // ES6 feature of de-structuring
 // wierd fact: Mongoose minify and lowercases collection name: Todo -> todo in mongodb, so on
@@ -72,7 +75,7 @@ app.get('/todos',      (req,res) => {
   });
 }); // GET /todos
 
-      // Run program.
+    // Run program.
       // λ node server\server.js
       // Started on Port 3000
       // Mongoose default connection open to mongodb://192.168.99.100:32768/TodoApp
@@ -85,7 +88,6 @@ app.get('/todos',      (req,res) => {
 ///  New paragraph: How to fetch individual ID.
 // GET /todos/59848628ba4e4e0e3c5c4f5b     -  route to fetch individual _Id  59848628ba4e4e0e3c5c4f5b
 //   part of the  URL is dynamic
-// Both
 app.get('/todos/:id', (req, res) => {
    var id = req.params.id;   // got the id variable from GET HTTP request.
   //  res.send(req.params);    // DEBUG: variable id should be initialized by dynamic id  in req.params object.
@@ -96,24 +98,23 @@ app.get('/todos/:id', (req, res) => {
   };
   // console.log(`ObjectID.isValid?  Id ${id} is valid`);
     // 404 - send back empty set
-
+    // findById
+      // success
+          // if todo - send it back
+          // if no todo - send back  404 with an empty body
+      // error
+          // 400 - and send empty body back
     Todo.findById(id).then((todo) => {
       if(!todo) {
-            // console.log(`Error: ID ${id} todo is not found`);
+         // console.log(`Error: ID ${id} todo is not found`);
           return res.status(404).send();// Status 404 , and  send back empty set
       }
         // console.log('Todo findById ', todo);
         res.status(200).send({todo})
       }).catch((e) => {
         return res.status(400).send();
-    });
+      });
 
-  // findById
-    // success
-        // if todo - send it back
-        // if no todo - send back  404 with an empty body
-    // error
-        // 400 - and send empty body back
 });
 
 // Challeng from Lecture 82  section  7
@@ -143,15 +144,40 @@ app.delete('/todos/:id', ( req, res ) => {
        });
 });
 
+// Update  REST  API . HTTP  PATCH request.
 
-// Run from cmd.exe    -     nodemon server/server.js
-// And run Postman  to generate GET requests.
-//  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
-//
+app.patch('/todos/:id',( req, res) => {
+
+  var id = req.params.id;
+  var body = _.pick(req.body, ['text','completed']);   // Lowdash library function.
+
+      if( !ObjectID.isValid(id)) {
+           return res.status(404).send({});// Status 404 , and  send back empty set
+      };
+
+      if(_.isBoolean(body.completed) && body.completed) {
+          body.completedAt  = new Date().getTime();  //
+      } else {
+          body.completed = false;  //
+          body.completedAt = null ; //
+      }
+
+      Todo.findByIdAndUpdate(id,  {$set: body}, {new: true}).then((todo) => {
+        // Check if the todo object exist.
+        if(!todo) {
+          return res.status(404).send();
+        }
+        res.send({todo});
+      }).catch((e) => {
+         res.status(400).send();
+      })
 
 
+});   // End of Update  REST  API . HTTP  PATCH request.
+
+// Start the app
 app.listen(port, () => {
   console.log(`Started up at Port ${port}`);
 });
 
-module.exports = {app};  // For testing purposes
+module.exports = {app};  // For Unit testing purposes
