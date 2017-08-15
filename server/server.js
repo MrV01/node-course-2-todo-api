@@ -16,9 +16,9 @@ var bodyParser = require('body-parser');
 //         server/models/todo.js
 //         server/models/user.js
 //
-const {ObjectID} = require('mongodb') ;   // for validation of the _id import mongoDB driver. Method:
-
-// Load Mongoose.  Attention!!!  var instead of const. We'll need to test it eventually
+const {ObjectID} = require('mongodb') ;   // Native MongoDB driver,
+                                                        //for validation of the _id import mongoDB driver. Method:
+// Load Mongoose.  Attention!!!  var instead of const. We'll need to unit test it with Mocha
 var {mongoose} = require('./db/mongoose');   // ES6 feature of de-structuring
 // wierd fact: Mongoose minify and lowercases collection name: Todo -> todo in mongodb, so on
 
@@ -32,8 +32,10 @@ var{User} = require('./models/user');
 //  Service endpoints POST/todos
 //  server.js  should contain  only Express ( or other HTTP)  routes.
 
-var app = express();
-// For deployment on Heroku. Adjust port number.
+var app = express();    ///  provides methods :  post(POST HTTP), get(GET HTTP), delete ( DELETE HTTP )
+
+// For deployment on Heroku.
+// Adjust port number according to process.env.PORT global.
 const port = process.env.PORT || 3000;
 
 //
@@ -83,6 +85,7 @@ app.get('/todos',      (req,res) => {
 ///  New paragraph: How to fetch individual ID.
 // GET /todos/59848628ba4e4e0e3c5c4f5b     -  route to fetch individual _Id  59848628ba4e4e0e3c5c4f5b
 //   part of the  URL is dynamic
+// Both
 app.get('/todos/:id', (req, res) => {
    var id = req.params.id;   // got the id variable from GET HTTP request.
   //  res.send(req.params);    // DEBUG: variable id should be initialized by dynamic id  in req.params object.
@@ -100,7 +103,8 @@ app.get('/todos/:id', (req, res) => {
           return res.status(404).send();// Status 404 , and  send back empty set
       }
         // console.log('Todo findById ', todo);
-        res.send({todo});   // send back ES6  shortcut of { "todo" : todo}    }).catch((e) => {
+        res.status(200).send({todo})
+      }).catch((e) => {
         return res.status(400).send();
     });
 
@@ -111,6 +115,34 @@ app.get('/todos/:id', (req, res) => {
     // error
         // 400 - and send empty body back
 });
+
+// Challeng from Lecture 82  section  7
+//  Delete todo by _id  from MongoDB
+//
+app.delete('/todos/:id', ( req, res ) => {
+      // get the id
+      var id = req.params.id;   // got the id variable from GET HTTP request.
+      // validate the id -> not valid ? return 404
+      if( !ObjectID.isValid(id)) {
+           // console.log(`ObjectID.isValid?  Id ${id} not valid`);
+           return res.status(404).send({});// Status 404 , and  send back empty set
+      };
+      // remove todo by id
+      Todo.findByIdAndRemove(id).then((todo) => {
+           // success
+            if(!todo) {
+                 // if no doc, send 404
+                return res.status(404).send({});// Status 404 , and  send back empty set
+            }
+            // if doc, send doc back with 200
+            res.status(200).send({todo});
+        }).catch((e) => {
+             // error
+             // 400 with empty body
+            res.status(400).send();
+       });
+});
+
 
 // Run from cmd.exe    -     nodemon server/server.js
 // And run Postman  to generate GET requests.

@@ -1,3 +1,5 @@
+// Command line run command:  λ npm run test-watch
+//
 //
 const expect = require('expect');
 const request = require('supertest');
@@ -73,6 +75,8 @@ describe('Post /todos', () => {
     });
 });  // End of POST /todo
 
+//  Test case
+
 describe("GET /todos", () => {
   it('should get all todos', (done) => {
     request(app)  // call "supertest"
@@ -86,6 +90,8 @@ describe("GET /todos", () => {
   } );
 
 });   //  End of  GET /todos
+
+//  Test case
 
 describe("GET /todos/:id", () => {
   it("should return todo document by _id", (done) => {
@@ -117,6 +123,56 @@ describe("GET /todos/:id", () => {
          .end(done);
     });
 
-
-
 });  // end of GET /todos/:id   describe
+
+//  Test case
+
+describe('DELETE /todos/:id', () => {
+
+    it('should remove  a todo', (done) => {
+        // Delete one of the pre-defined todos in the database,
+        var hexId  = todos[1]._id.toHexString();
+        // Call request
+        request(app)
+          .delete(`/todos/${hexId}`)
+          .expect(200)
+          .expect(( res) => {
+            expect(res.body.todo._id).toBe(hexId);
+          })
+         .end((err, res) => {
+              if(err) {
+                return done(err);
+              }
+
+              // query database using findById() assertion: toNotExist
+              //  hint:  expect( query ).toNotExist();
+
+              Todo.findById(hexId).then((todos) => {
+                expect (todos).toNotExist();
+                done();  // done successfully, the document removed from database
+              }).catch((e) => done(e));   // Statement syntax as oppose function syntax . Catch and return errors if any
+
+         });
+
+    });
+
+     it('should return 404 if todo not found', (done) => {
+       // Create new ObjectID instance, and find it.
+          var testId = new ObjectID().toHexString();
+         // Expect 404 code back
+          request(app)
+           .delete(`/todos/${testId}`)
+           .expect(404)
+           .end(done);
+     });
+    //
+    it('should return 404 if  object id is not valid', (done) => {
+      var testId = "12345abcdef";  // Is not MongoDB ID at all
+      request(app)
+       .delete(`/todos/${testId}`)
+       .expect(404)
+       .end(done);
+    });
+    //
+
+}); // end of DELETE /todos/:id  describe
