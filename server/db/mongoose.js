@@ -5,8 +5,8 @@
 var mongoose = require('mongoose');
 
 // Configuration variables. Mongo DB is remote or local?
-const mongodbConnectionStr =  process.env.MONGODB_URI  ||   'mongodb://192.168.99.100:32768/TodoApp';  // local docker container
-
+// Has been set in variable process.env.MONGODB_URI, file server.js
+const mongodbConnectionStr =  process.env.MONGODB_URI ;  // local docker container OR Heroku,
 // We  prefer Promises. Originally comes from third party library, therefore we must let Mongoose know
 // which implementation of Promise  we would like to use. (Embedded global.Promise at this time)
 

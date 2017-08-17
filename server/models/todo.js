@@ -8,6 +8,10 @@ var Todo = mongoose.model('Todo', {  // Very basic cofig here see docs for many 
      minlength: 1,   // min string length
      trim: 1             // Trim leading and trailing spaces,
    },
+   opt: {
+     type: String,
+     default: ""
+   },
    completed: {
      type: Boolean,
      default: false   // validator  default value

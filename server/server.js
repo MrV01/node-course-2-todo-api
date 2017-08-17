@@ -3,11 +3,14 @@
 // And run Postman  to generate GET / POST/ DELETE /PATCH requests.
 //  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
 // Push to Heroku command:  git push heroku master
-
 // Task:  Refactoring server.js file.
-// Models and configurations supposed to be relocated to separate files.
+// Models and configurations supposed to be relocated to separate files:
+//  Folders: ./db  ,  ./models , ./config
 // Express route handlers supposed to be here, in serve.js
 //
+// Import configuration file of the app.
+require('./config/config') ;  // config.js deals with global variables  
+
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -38,8 +41,8 @@ var{User} = require('./models/user');
 var app = express();    ///  provides methods :  post(POST HTTP), get(GET HTTP), delete ( DELETE HTTP )
 
 // For deployment on Heroku.
-// Adjust port number according to process.env.PORT global.
-const port = process.env.PORT || 3000;
+// Adjust port number according to process.env.PORT global. - Done on top of the page.
+const port = process.env.PORT ;
 
 //
 // CRUD operations routes
@@ -150,6 +153,7 @@ app.patch('/todos/:id',( req, res) => {
 
   var id = req.params.id;
   var body = _.pick(req.body, ['text','completed']);   // Lowdash library function.
+  // Picks up "text" and "completed" properties from JSON object.
 
       if( !ObjectID.isValid(id)) {
            return res.status(404).send({});// Status 404 , and  send back empty set
@@ -170,7 +174,7 @@ app.patch('/todos/:id',( req, res) => {
         res.send({todo});
       }).catch((e) => {
          res.status(400).send();
-      })
+      });
 
 
 });   // End of Update  REST  API . HTTP  PATCH request.

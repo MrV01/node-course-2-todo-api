@@ -11,11 +11,13 @@ const {Todo} = require('./../models/todo');
 
 // Seed data for todo collection:
 //  Add _id   property (new)
-const todos = [
+var todos = [
   { _id: new ObjectID(),
-    text: "First test todo",      opt : "seed"},
+    text: "First test todo",      opt : "seed" },
   { _id: new ObjectID(),
-    text: "Second test todo",  opt: "seed"}
+    text: "Second test todo",  opt: "seed",
+    completed : true ,
+    completedAt : 33 }
 ];
 
 // Cleaning Todo collection before each test case run. Mocha runs beforeEach()
@@ -175,4 +177,64 @@ describe('DELETE /todos/:id', () => {
     });
     //
 
-}); // end of DELETE /todos/:id  describe
+}); // end of describe DELETE /todos/:id
+
+describe( 'PATCH /todos/:id', () => {
+
+  it('should update the todo', (done) => {
+     // grab id of the first item
+     var hexId  = todos[0]._id.toHexString();
+     // update text, set completed true
+      var modText = todos[0].text +  " PATCH1";
+      var modCompleted = true;
+     // Call request
+     request(app)
+       .patch(`/todos/${hexId}`)
+       .send( { "text" : modText , "completed" : modCompleted } )
+       // 200
+       .expect(200)
+       // text is changed, completed is true, completedAt is a number  .toBeA
+       .expect(( res) => {
+           // console.log(res);
+          expect(res.body.todo._id).toBe(hexId);
+          expect(res.body.todo.text).toBe(modText);
+          expect(res.body.todo.completed).toBe(modCompleted);
+          expect(res.body.todo.completedAt).toBeA('number'); //  type of  constructor  equals
+        })
+      .end((err, res) => {
+           if(err) {
+             return done(err);
+           }
+           done();
+      });  // end of request app
+  }); // end of it
+
+  it('should clear completedAt when todo is not completed ', (done) => {
+    // grab id of the second todo  item
+    var hexId  = todos[1]._id.toHexString();
+    // update text, set completed false
+    var modText = todos[1].text + " PATCH2";
+    var modCompleted = false;
+    // 200
+    // Call request
+    request(app)
+      .patch(`/todos/${hexId}`)
+      .send( { "text" : modText , "completed" :   modCompleted } )
+      .expect(200)
+      .expect(( res) => {
+        // text is changed, completed is false, completedAt is null  .toNotExist
+        expect(res.body.todo._id).toBe(hexId);
+        expect(res.body.todo.text).toBe(modText);
+        expect(res.body.todo.completed).toBe(modCompleted);
+        expect(res.body.todo.completedAt).toNotExist(); //   completedAt === null
+      })
+     .end((err, res) => {
+          if(err) {
+            return done(err); //error
+          }
+          done();  //OK
+    }); // end of request app
+
+  });  // end of it
+
+});  // end of  describe  PATCH /todos/:id
