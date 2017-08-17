@@ -1,4 +1,5 @@
 
+// Heroku has default value of the NODE_ENV = 'production'
 var env = process.env.NODE_ENV || 'development';
 // Also  in package.json file  "scripts" section  -> "test" script:
 // "test" : "export NODE_ENV=test || SET \"NODE_ENV=test\"  && mocha server/**/*.test.js"
