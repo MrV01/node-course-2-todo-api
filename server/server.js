@@ -9,7 +9,7 @@
 // Express route handlers supposed to be here, in serve.js
 //
 // Import configuration file of the app.
-require('./config/config') ;  // config.js deals with global variables  
+require('./config/config') ;  // config.js deals with global variables
 
 const _ = require('lodash');
 const express = require('express');
@@ -179,9 +179,40 @@ app.patch('/todos/:id',( req, res) => {
 
 });   // End of Update  REST  API . HTTP  PATCH request.
 
+// Challenge: Section 8 , Lecture 88.
+// Create new User   POST /users
+// Combine   POST    /todos route code.
+// And   var body = _.pick(req.body, ['email','password']);  from PATCH route.
+//
+//  Continue to modify  POST /users  sign up call. Generating tokens.
+//  Generate token and return it  from the sign-up REST end point.
+//  By the way, PassportJS can be used to handle JWT tokens generation.
+//  However it requires an effort to adapt the code.
+//
+app.post('/users', ( req, res ) => {
+      // Select email, password from the  request
+      var body = _.pick(req.body, ['email','password']);
+      // create new User object  from JSON object
+      // which consists of  { email: email , password: password } thanks to _.pick()
+      var user = new User( body);
+      //  New custom methods we define:
+     //  1. User.findByToken()   // Model method addition to mongoose "User" model
+     //       returns user by token.
+     //  2. user.generateAuthToken() // instance level  method.
+     //
+     // Save to the collection of MongoDB
+      user.save().then(() => { // successfully saved user to MongoDB
+         return user.generateAuthToken();
+      }).then((token) => {  // got token from the previos .then(resolve,) which === user.generateAuthToken()
+        res.header('x-auth', token).send(user);   //  Added extra header 'x-auth' : token  , and send user back
+      }).catch((e) => {   // failure  to save user or generate token, etc.
+          res.status(400).send(e);  // cheatsheet of code selections:   https://httpstatuses.com/
+      });
+});  // End of Create new User  REST API. http  POST request
+
 // Start the app
 app.listen(port, () => {
   console.log(`Started up at Port ${port}`);
 });
 
-module.exports = {app};  // For Unit testing purposes
+module.exports = {app};  // For Unit testing purposes ( server.test.js imports the file)
