@@ -34,6 +34,7 @@ var {mongoose} = require('./db/mongoose');   // ES6 feature of de-structuring
 //
 var{Todo} = require('./models/todo');
 var{User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 //  Service endpoints POST/todos
 //  server.js  should contain  only Express ( or other HTTP)  routes.
@@ -210,6 +211,18 @@ app.post('/users', ( req, res ) => {
       });
 });  // End of Create new User  REST API. http  POST request
 
+
+// Section 8. Lection 91.  Private Express routs.
+// Demo  private route:  GET /users/me
+
+// Refactoring authentication code from /users/me into separate function:
+// server/middleware/authenticate.js
+
+app.get('/users/me' , authenticate, (req, res) => {
+  res.send(req.user);
+});
+
+///////////////////////////////////////////////////////////////////////////////////
 // Start the app
 app.listen(port, () => {
   console.log(`Started up at Port ${port}`);

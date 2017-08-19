@@ -70,6 +70,32 @@ UserSchema.methods.generateAuthToken = function () {
     });
 };
 
+// User.findByToken(token)  // Finds user from users collection using token as a key.
+
+UserSchema.statics.findByToken = function (token) {
+  var User = this;
+  var decoded;
+
+try {
+  decoded = jwt.verify(token,'abc123')
+} catch (e) {
+  // return new Promise((resolve, reject) => {
+  //       reject(); // Promise.reject will guarantee that ancestor's .then() will never fired.
+  //       // however .catch() will be called.
+ // }
+ // Equivalent of the above Promise((resolve, reject) => {} ) :
+    return Promise.reject();
+  };
+
+// successfully decoded
+return User.findOne({
+  '_id': decoded._id,
+  'tokens.token' : token,
+  'tokens.access' : 'auth'
+});
+
+};
+
 var User = mongoose.model('User', UserSchema) ; // User will be lower case "user" collection in MongoDB
 
 module.exports = { User}; // ES6
