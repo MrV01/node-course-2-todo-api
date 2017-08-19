@@ -222,6 +222,14 @@ app.get('/users/me' , authenticate, (req, res) => {
   res.send(req.user);
 });
 
+// Section 8. Lection 92.  Hashing passwords. One-way hash.
+// Using bcrypt algorithm.  (npm bcryptjs  Completely JS portable library )
+//    npm i  bcryptjs@2.4.3 --save
+//  https://github.com/dcodeIO/bcrypt.js
+// We will use Mongoose midleware , http://mongoosejs.com/docs/middleware.html
+// to make sure , that passwords are hashed, before saving to the database.
+//  () Mongoose Schema  pre - event to add  into user.js model .
+//
 ///////////////////////////////////////////////////////////////////////////////////
 // Start the app
 app.listen(port, () => {

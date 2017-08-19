@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 
 // {   // Structure of the User Schema entry:
@@ -76,25 +77,48 @@ UserSchema.statics.findByToken = function (token) {
   var User = this;
   var decoded;
 
-try {
-  decoded = jwt.verify(token,'abc123')
-} catch (e) {
-  // return new Promise((resolve, reject) => {
-  //       reject(); // Promise.reject will guarantee that ancestor's .then() will never fired.
-  //       // however .catch() will be called.
- // }
- // Equivalent of the above Promise((resolve, reject) => {} ) :
-    return Promise.reject();
-  };
+    try {
+      decoded = jwt.verify(token,'abc123')
+    } catch (e) {
+      // return new Promise((resolve, reject) => {
+      //       reject(); // Promise.reject will guarantee that ancestor's .then() will never fired.
+      //       // however .catch() will be called.
+     // }
+     // Equivalent of the above Promise((resolve, reject) => {} ) :
+        return Promise.reject();
+    };
+    // successfully decoded
+    return User.findOne({
+      '_id': decoded._id,
+      'tokens.token' : token,
+      'tokens.access' : 'auth'
+    });
+};
 
-// successfully decoded
-return User.findOne({
-  '_id': decoded._id,
-  'tokens.token' : token,
-  'tokens.access' : 'auth'
+// Register  Mongoose  Schema event ( pre) .
+// Example from: http://mongoosejs.com/docs/middleware.html
+// var schema = new Schema(..);
+// schema.pre('save', function(next) {
+//   // do stuff
+//   next();
+// });
+
+UserSchema.pre('save', function (next) {
+  var user = this;
+   if( user.isModified('password') ) {
+     let password =  user.password;  // assume password is in clean text
+     //Salt generation.
+     bcrypt.genSalt(10, (err, salt) => {
+       bcrypt.hash(password, salt, (err, hash) => {
+            user.password = hash;
+            next();
+       });
+     });
+   } else {  // password is not changed, then next()
+     next();
+   }
 });
 
-};
 
 var User = mongoose.model('User', UserSchema) ; // User will be lower case "user" collection in MongoDB
 

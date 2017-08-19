@@ -5,21 +5,50 @@
 //  Standard JWT ( JSON WEB TOKEN ) module: https://www.npmjs.com/package/jsonwebtoken
 //   npm i  jsonwebtoken@7.4.3 --save
 //  JWT  RFC 7519  web site: https://jwt.io/
-//  Paste token there for decoding
+//  Nice feature:  Paste token there for decoding
+//
+//////  Password hashing for storage in the database:  https://github.com/dcodeIO/bcrypt.js
+//   npm i  bcryptjs@2.4.3 --save
+//
 
 const {SHA256} = require('crypto-js');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');  //  https://github.com/dcodeIO/bcrypt.js
 
-var data = {
-  id: 10
-};
+var password = '123abc!';
 
-var token = jwt.sign(data, '123abc');   // creates hash
-console.log(token);
+//Salt generation.
+bcrypt.genSalt(10, (err, salt) => {
+  bcrypt.hash(password, salt, (err, hash) => {
+    console.log("hash: " , hash);
+  });
+});
+// console
+//  hash:  $2a$10$751AjUD4kWqMD574woSFi.ZUHBmGo0WCPInkYbQXeASgmRAXwOgjq
+// Salt$number of rounds$hash itselt
+// Now test it:
+var hashedPassword =
+'$2a$10$751AjUD4kWqMD574woSFi.ZUHBmGo0WCPInkYbQXeASgmRAXwOgjq';
 
-var decoded =  jwt.verify(token, '123abc');  // verify that token was not altered
-console.log('Decoded',decoded);
+bcrypt.compare(password, hashedPassword, (err, res) => {
+  console.log("res", res);
+});
 
+bcrypt.compare('123456', hashedPassword, (err, res) => {
+  console.log("res", res);
+});
+
+
+// var data = {
+//   id: 10
+// };
+//
+// var token = jwt.sign(data, '123abc');   // creates hash
+// console.log(token);
+//
+// var decoded =  jwt.verify(token, '123abc');  // verify that token was not altered
+// console.log('Decoded',decoded);
+//
 
 //  Below  is demonstrate how the  JWT ( JSON WEB TOKEN ) standard works:
 // Note: Using  crypto , and crypto-js  instead of  jsonwebtoken ( ready to eat  :-)
