@@ -14,6 +14,11 @@ const bcrypt = require('bcryptjs');
 //       token: 'pqopeopqoporipoqirqp'  // crypto - hash
 //    }]
 // }
+// !!!!  .statics.  and  .methods.  methods definitions  in mongoose Schema
+// <Schema Name>.methods.<function>  -  Defines  functions on
+//                                                              documents( instances) created from  the Model
+// <Schema Name > .statics. <function>  - Defunes functions on "Models" of the particular "Schema"
+// (http://mongoosejs.com/docs/2.7.x/docs/methods-statics.html )
 
  var UserSchema = new mongoose.Schema({
    email: {
@@ -52,10 +57,10 @@ const bcrypt = require('bcryptjs');
 
 // Overwrite method, which Defines what fields will be sent back to the user
  UserSchema.methods.toJSON = function () {
-   var user = this;
+   var user = this;  // particular document in users collection
    var userObject = user.toObject();
 
-   return _.pick(userObject, ['_id', 'email']);
+   return  _.pick(userObject, ['_id', 'email']);
  };
 
 // Add new method  which generates new token
@@ -70,6 +75,13 @@ UserSchema.methods.generateAuthToken = function () {
       return token;   //  return token object when the Promise succed to chain on it, next then() call
     });
 };
+
+// Add new method which compares password and hash in the user's document.
+//
+// UserSchema.methods.comparePasswordAndHash = function(pwd, token) {
+//   var user = this;  // particular document in users collection
+//
+// };
 
 // User.findByToken(token)  // Finds user from users collection using token as a key.
 
@@ -95,6 +107,42 @@ UserSchema.statics.findByToken = function (token) {
     });
 };
 
+// User.findByEmail(email)  // Finds user from users collection using Email as a key
+UserSchema.statics.findByEmail = function (body) {
+   var User = this;  //  Model instance.
+    // Search by:
+   var uEmail = body.email;
+   var uPassword = body.password;
+
+    return User.findOne({  // find document with uEmail in the Model
+            'email':  { $eq : uEmail }
+       },'password tokens').then( (user) => {
+         // console.log(user);
+         if(!user) {
+           return Promise.reject();   // failed instantly ( does not exist).
+         }
+        // Compare  password  and 'password' -hash from the 'users' collection
+        // compare the password and hash
+          //  VVV:  syncronous solution . bcrypt doe not support Promises
+          //  if( bcrypt.compareSync(uPassword, user.password ) ){
+          //     return  user.tokens[0].token;
+          //  };
+          //  return Promise.reject();
+          // The Better Asyncronius solution's idea from the Instructor:
+          return new Promise((resolve, reject) => {
+              bcrypt.compare(uPassword, user.password, (err, res) => {
+                if(err) {
+                  reject(err);
+                } else if (res === true) {
+                  resolve(user);
+                } else {
+                  reject(res);
+                }
+              });
+          });
+       });
+  };
+
 // Register  Mongoose  Schema event ( pre) .
 // Example from: http://mongoosejs.com/docs/middleware.html
 // var schema = new Schema(..);
@@ -104,7 +152,7 @@ UserSchema.statics.findByToken = function (token) {
 // });
 
 UserSchema.pre('save', function (next) {
-  var user = this;
+  var user = this; //  event defined on User Model  level
    if( user.isModified('password') ) {
      let password =  user.password;  // assume password is in clean text
      //Salt generation.
@@ -122,4 +170,4 @@ UserSchema.pre('save', function (next) {
 
 var User = mongoose.model('User', UserSchema) ; // User will be lower case "user" collection in MongoDB
 
-module.exports = { User}; // ES6
+module.exports = { User}; // ES6 syntax

@@ -1,12 +1,21 @@
 
 //// Run from cmd.exe    -     nodemon server/server.js
-// And run Postman  to generate GET / POST/ DELETE /PATCH requests.
+////  Run from cmd.exe WITH  --trace-warnings for Promise(s) troubleshooting
+////  I.E. λ nodemon --trace-warnings server\server.js
+/// Debugging Node app (https://medium.com/@paul_irish/debugging-node-js-nightlies-with-chrome-devtools-7c4a1b95ae27)
+///  1. node --inspect-brk  --trace-warnings   server\server.js
+///     OR nodemon --inspect-brk  --trace-warnings   server\server.js
+///  2. Open about:inspect in Chrome
+///  3. Click on "Open dedicated DevTools for Node"
+///  4. Happy Debugging!
+//
+// Then run Postman  to generate GET / POST/ DELETE /PATCH requests.
 //  Grab Id from the RoboMongo TodoApp  db,  collection: todos and paste it to the Postman.
 // Push to Heroku command:  git push heroku master
 // Task:  Refactoring server.js file.
 // Models and configurations supposed to be relocated to separate files:
 //  Folders: ./db  ,  ./models , ./config
-// Express route handlers supposed to be here, in serve.js
+// Express route handlers supposed to be here, in server.js
 //
 // Import configuration file of the app.
 require('./config/config') ;  // config.js deals with global variables
@@ -218,20 +227,57 @@ app.post('/users', ( req, res ) => {
 // Refactoring authentication code from /users/me into separate function:
 // server/middleware/authenticate.js
 
+
 app.get('/users/me' , authenticate, (req, res) => {
   res.send(req.user);
 });
 
-// Section 8. Lection 92.  Hashing passwords. One-way hash.
-// Using bcrypt algorithm.  (npm bcryptjs  Completely JS portable library )
-//    npm i  bcryptjs@2.4.3 --save
-//  https://github.com/dcodeIO/bcrypt.js
-// We will use Mongoose midleware , http://mongoosejs.com/docs/middleware.html
-// to make sure , that passwords are hashed, before saving to the database.
-//  () Mongoose Schema  pre - event to add  into user.js model .
-//
+// Challenge:  Dedicated route for a loging  in users
+// POST /users/login {email, password }
+// The route gets email, password in clear text.
+// It compares hash from db bcrypt.compare  with email and password,
+// and sends back 1. header x-auth  with new auth token  inside.
+//                          2.  body  with _id of the "user" document inside.
+/// Example of request:
+//  /POST /users/login   {
+// 	"email": "vlad12@example.com",
+// 	"password": "password"
+// }
+//  Response header:
+//    x-auth →eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1OTlkZTgzYTMxYmIyMjIzOTg3MmI1NzIiLCJhY2Nlc3MiOiJhdXRoIiwiaWF0IjoxNTAzNTk4NTU4fQ.ZHiiG4tlLSQECFi21i06gObv-YiHvYiz6llc76hL8qU
+//  Response body:
+//  {
+//    "_id": "599de83a31bb22239872b572"
+//  }
+//  Check it out : GET /users/me
+//  with x-auth header equals to /POST /users/login
+//  returns:
+//  {
+//    "_id": "599de83a31bb22239872b572",
+//    "email": "vlad12@example.com"
+//  }
+///   Perfect !!!!
+/////////////////////////////////////////////////////
+
+app.post('/users/login',(req, res) => {
+   // Select email, password from the  request
+    var body = _.pick(req.body, ['email','password']);
+
+    User.findByEmail(body).then( (user) => {
+          //  Successful comparison e-mail and password by findByEmail
+          // Now  generate new x-auth token ( .methods. user.generateAuthToken()  will push it to the DB document array )
+          return  user.generateAuthToken().then((token) => {
+            res.status(200).header('x-auth', token).send(user);
+          });
+    }).catch((e) => {
+          res.status(400).send(e); // user not found
+    });
+}); // End of  POST /user/login
+
+
 ///////////////////////////////////////////////////////////////////////////////////
-// Start the app
+// Start the app on the port. 
+
 app.listen(port, () => {
   console.log(`Started up at Port ${port}`);
 });

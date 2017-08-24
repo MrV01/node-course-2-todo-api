@@ -1,5 +1,13 @@
 // Refactoring authentication code from /users/me into separate function:
 // server/middleware/authenticate.js
+// Section 8. Lection 92.  Hashing passwords. One-way hash.
+// Using bcrypt algorithm.  (npm bcryptjs  Completely JS portable library )
+//    npm i  bcryptjs@2.4.3 --save
+//  https://github.com/dcodeIO/bcrypt.js
+// We will use Mongoose midleware , http://mongoosejs.com/docs/middleware.html
+// to make sure , that passwords are hashed, before saving to the database.
+//  () Mongoose Schema  pre - event to add  into user.js model .
+//
 
 var{User} = require('./../models/user');
 
@@ -22,4 +30,4 @@ var authenticate = (req, res, next) => {
   });
 };
 
-module.exports = {authenticate}; 
+module.exports = {authenticate};

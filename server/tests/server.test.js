@@ -325,3 +325,77 @@ describe('POST /users', () => {
   });
 
 }); //  describe 'POST /users' test ended
+
+//  Test Login route: POST /users/login
+ describe('POST /users/login', () => {
+// // when valid email and password provided,
+// //  Following should be returned:
+//// Status: 200,  header  x-auth: token and body: {"email" : "same e-mail"}
+////
+  it('should authenticate a user', (done) => {
+     var email = 'vladSeedData01@example.com';
+     var password = 'userOnePass';
+      var headersBody = null;
+
+     request(app)
+      .post('/users/login')
+      .send( { 'email' : email , 'password' : password })
+      .expect(200)
+      .expect((res) => {
+        // console.log(res);
+         expect(res.headers['x-auth']).toExist();
+         expect(res.body._id).toExist();
+         headersBody = res;
+      })
+      .end((err) => {
+         if(err) {
+           return done(err);
+         }
+         // Check collection "users"
+         User.findById( headersBody.body._id).then((user) => {
+           expect(user).toExist();
+           expect(user.tokens.length).toBeGreaterThan(1); // At least two auth tokens at this point
+           done();
+         });
+      });
+  });
+
+////  Next test-case : failure to authenticate NON-existing user.
+  it('should NOT authenticate a non-existing user with correct password', (done) => {
+   var email = 'vladSeedData01@example.co'; // tailing "m" has been removed.
+   var password = 'userOnePass';
+   request(app)
+    .post('/users/login')
+    .send({email,password})
+    .expect(400)
+    .end((err) => {
+       if(err) {
+         return done(err);
+       }
+       User.findOne({email}).then((user) => {
+         expect(user).toNotExist();
+         done();
+       });
+    });
+  });
+
+////  Failure to authenticate Existing user with wrong password
+  it('should NOT authenticate a Existing user with wrong password', (done) => {
+   var email = 'vladSeedData01@example.com';
+   var password = 'userOnePas!!';   // Tailing s has been replaced by !!
+   request(app)
+    .post('/users/login')
+    .send({email,password})
+    .expect(400)
+    .end((err) => {
+       if(err) {
+         return done(err);
+       }
+       User.findOne({email}).then((user) => {
+         expect(user).toExist();
+         done();
+       });
+    });
+  });
+
+}); // End  Test Login route: POST /users/login
