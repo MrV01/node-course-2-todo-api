@@ -333,37 +333,36 @@ describe('POST /users', () => {
 //// Status: 200,  header  x-auth: token and body: {"email" : "same e-mail"}
 ////
   it('should authenticate a user', (done) => {
-     var email = 'vladSeedData01@example.com';
-     var password = 'userOnePass';
-      var headersBody = null;
+     var email = users[1].email;    // seed user 2 email
+     var password = users[1].password;  //seed user 2 password
 
-     request(app)
+   request(app)
       .post('/users/login')
       .send( { 'email' : email , 'password' : password })
       .expect(200)
       .expect((res) => {
         // console.log(res);
          expect(res.headers['x-auth']).toExist();
-         expect(res.body._id).toExist();
-         headersBody = res;
       })
-      .end((err) => {
+      .end((err,res) => {
          if(err) {
            return done(err);
          }
-         // Check collection "users"
-         User.findById( headersBody.body._id).then((user) => {
-           expect(user).toExist();
-           expect(user.tokens.length).toBeGreaterThan(1); // At least two auth tokens at this point
+         // Check collection "users" for the document with _id
+         User.findById( users[1]._id).then((user) => {  //  Attention!!! _id in MongoDB is an Object!!!
+           expect(user.tokens[0]).toInclude({   // Excellent  Checkup of most recent push(token)
+                access: 'auth',
+                token:  res.headers['x-auth']
+           });
            done();
-         });
+         }).catch((e) => done(e));  // Catch all errors and rejected Promises
       });
   });
 
 ////  Next test-case : failure to authenticate NON-existing user.
   it('should NOT authenticate a non-existing user with correct password', (done) => {
-   var email = 'vladSeedData01@example.co'; // tailing "m" has been removed.
-   var password = 'userOnePass';
+   var email = users[0].email + 'm';   // seed user 1; // added  tailing "m" .
+   var password = users[0].password;
    request(app)
     .post('/users/login')
     .send({email,password})
@@ -375,14 +374,14 @@ describe('POST /users', () => {
        User.findOne({email}).then((user) => {
          expect(user).toNotExist();
          done();
-       });
+       }).catch((e) => done(e));
     });
   });
 
 ////  Failure to authenticate Existing user with wrong password
   it('should NOT authenticate a Existing user with wrong password', (done) => {
-   var email = 'vladSeedData01@example.com';
-   var password = 'userOnePas!!';   // Tailing s has been replaced by !!
+   var email = users[0].email;
+   var password = users[0].password + '!!' ;   // Tailing  !! added to the password
    request(app)
     .post('/users/login')
     .send({email,password})
@@ -394,7 +393,7 @@ describe('POST /users', () => {
        User.findOne({email}).then((user) => {
          expect(user).toExist();
          done();
-       });
+       }).catch((e) => done(e));
     });
   });
 
