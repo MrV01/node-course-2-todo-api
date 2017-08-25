@@ -6,7 +6,7 @@ const request = require('supertest');
 // Mocha and nodemon  are not to be "require"
 const {ObjectID} = require('mongodb') ;   // for validation of the _id import mongoDB driver.
 
-const{app} = require('./../server');
+const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
 const {User} =  require('./../models/user');
 
@@ -348,7 +348,7 @@ describe('POST /users', () => {
          if(err) {
            return done(err);
          }
-         // Check collection "users" for the document with _id
+         // Check "seed" of collection "users" for the document with _id
          User.findById( users[1]._id).then((user) => {  //  Attention!!! _id in MongoDB is an Object!!!
            expect(user.tokens[0]).toInclude({   // Excellent  Checkup of most recent push(token)
                 access: 'auth',
@@ -398,3 +398,34 @@ describe('POST /users', () => {
   });
 
 }); // End  Test Login route: POST /users/login
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  Test Logout   route:   DELETE /users/me/token
+ describe('DELETE /users/me/token', () => {
+
+   // remove correct "x-auth" token  from the array of tokens
+   //  Using "seed" data from  users[0].tokens[0]
+   it('Should remove "auth" token from the userS tokens array', (done) => {
+     var userAuthToken = users[0].tokens[0].token; // token from the  first element of the array seedings
+     request(app)
+       .delete('/users/me/token')
+       .set('x-auth', userAuthToken)
+       .expect(200)
+       .end( (err, res) => {  // asyncronous assertion, because of search in the DB
+         if(err) {   // any from the assertions above?
+           return done(err);
+         }
+           // Check that there is no particular token in the Array anymore .
+          // User.findByToken(userAuthToken).then( (user) => {
+          //       if(! user ) { done() }; // success, because no user doc have the token
+          // }).catch((e) => done(e));
+
+          // Instructor's version . It looks better :-(  Because it checks same user's tokens.
+          User.findById(users[0]._id).then((user) => {
+              expect(user.tokens.length).toBe(0);  // none tokens left in the "seed" user.
+              done();
+          }).catch((e) => done(e));
+       });  // END of async assertion
+   });
+
+ }); // Test Logout   route:   DELETE /users/me/token
