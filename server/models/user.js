@@ -55,7 +55,7 @@ const bcrypt = require('bcryptjs');
    }]
  });
 
-// Overwrite method, which Defines what fields will be sent back to the user
+// Document level: Overwrite method, which Defines what fields will be sent back to the user
  UserSchema.methods.toJSON = function () {
    var user = this;  // particular document in users collection
    var userObject = user.toObject();
@@ -63,7 +63,9 @@ const bcrypt = require('bcryptjs');
    return  _.pick(userObject, ['_id', 'email']);
  };
 
-// Add new method  which generates new token
+//
+// Document level: Add new method  which generates new token
+//
 UserSchema.methods.generateAuthToken = function () {
     var user = this;   // particular document in users collection
     var access = 'auth';
@@ -76,15 +78,26 @@ UserSchema.methods.generateAuthToken = function () {
     });
 };
 
-// Add new method which compares password and hash in the user's document.
 //
-// UserSchema.methods.comparePasswordAndHash = function(pwd, token) {
-//   var user = this;  // particular document in users collection
+// Document level:  Method which deletes token from "user" document.
 //
-// };
+UserSchema.methods.removeToken = function (token) {
+  // Uses  MongoDB operator "$pull"   which removes element from the array
+  var user = this;
 
-// User.findByToken(token)  // Finds user from users collection using token as a key.
+  // user.update returns Promise ( at least it looks like that :-( )
+  // returning it up to enable Promise chaining.
+  return user.update( {
+      $pull: {
+        tokens: { token}  // syntactically  equals to    { token: token }
+        }
+  });
 
+};
+
+//
+// Collection level: User.findByToken(token)
+// Finds user from users collection using token as a key.
 UserSchema.statics.findByToken = function (token) {
   var User = this;
   var decoded;

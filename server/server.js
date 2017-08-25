@@ -232,6 +232,7 @@ app.get('/users/me' , authenticate, (req, res) => {
   res.send(req.user);
 });
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Challenge:  Dedicated route for a loging  in users
 // POST /users/login {email, password }
 // The route gets email, password in clear text.
@@ -257,7 +258,7 @@ app.get('/users/me' , authenticate, (req, res) => {
 //    "email": "vlad12@example.com"
 //  }
 ///   Perfect !!!!
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.post('/users/login',(req, res) => {
    // Select email, password from the  request
@@ -274,10 +275,27 @@ app.post('/users/login',(req, res) => {
     });
 }); // End of  POST /user/login
 
+/////////////////////////////////////////////////////////////////////////////////////
+/// Logout
+/////////////////////////////////////////////////////////////////////////////////////
+//  Middleware (req , res, next ) custom function   authenticate ("authenticate.js" )
+///                                                saves successfully
+//  authenticated credentials into the "request" Object.
+//      req.user = user;
+//      req.token = token;
+////
+app.delete('/users/me/token', authenticate , (req,res) => {
+  req.user.removeToken(req.token).then( () => {
+     res.status(200).send();   // "resolve" callback to Promise.then()
+  }, () => {
+      res.status(400).send();  // "reject" callback to Promise.then()
+  });
+});
+
 
 ///////////////////////////////////////////////////////////////////////////////////
-// Start the app on the port. 
-
+// Start the app on the port.
+///////////////////////////////////////////////////////////////////////////////////
 app.listen(port, () => {
   console.log(`Started up at Port ${port}`);
 });
