@@ -20,17 +20,26 @@ const users = [{
   _id: userTwoId,
   email:  'vladSeedData02@example.com',
   password: 'userTwoPass',
+  tokens: [{
+    access: 'auth',
+    token: jwt.sign({_id: userTwoId, access: 'auth'},'abc123').toString()
+  }]
 }];
 
 // Seed data for todo collection:
 //  Add _id   property (new)
 var todos = [
   { _id: new ObjectID(),
-    text: "First test todo",      opt : "seed" },
+    text: "First test todo",      opt : "seed",
+    _creator: userOneId
+  },
+
   { _id: new ObjectID(),
     text: "Second test todo",  opt: "seed",
     completed : true ,
-    completedAt : 33 }
+    completedAt : 33,
+    _creator: userTwoId
+  }
 ];
 
 // Function for beforeEach() of  Mocha

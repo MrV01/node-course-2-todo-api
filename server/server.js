@@ -54,22 +54,24 @@ var app = express();    ///  provides methods :  post(POST HTTP), get(GET HTTP),
 // Adjust port number according to process.env.PORT global. - Done on top of the page.
 const port = process.env.PORT ;
 
-//
-// CRUD operations routes
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////                              CRUD operations routes
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 app.use(bodyParser.json());
 
-// POST    /todos route
-app.post('/todos', (req,res) => {
-  // console.log(req.body);
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////   POST    /todos route    | Part 1  to adapt "authenticate" middleware
+///    to fill-out   "_creator :  ObjectId of user, who posted it in"
+///    property in the new "todo" documents
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+app.post('/todos', authenticate,  (req,res) => {
+  //  "authenticate"   adds "user" , "token" property-Objects to   req  parameter
   var todo = new Todo({
     text: req.body.text,
+    _creator: req.user._id,
     completed: req.body.completed,  // added by me to see what will happens: It works
     completedAt: req.body.completedAt  // added by me to see what will happen: It works
 
-    // database successfully updated in all cases.
-    // Unless there are validator's exceptions :-)
-    // GIT the version, goto sleep.
   });
   // Save to the collection of MongoDB
   todo.save().then((doc) => { // successfully
@@ -79,9 +81,15 @@ app.post('/todos', (req,res) => {
   });
 });// POST /todos
 
-// GET /todos  - route
-app.get('/todos',      (req,res) => {
-  Todo.find().then((todos)  => {
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///   GET /todos  - route    | Part 1.  route to implement "authenticate" middleware
+///    Show only todos, that belongs to the authenticated user.
+////   The middleware sets up    req.user  ,  req.token properties on the req Object-request
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+app.get('/todos',   authenticate,    (req,res) => {
+  Todo.find({   // search for  Todos  that were created by the authenticated user.
+    _creator: req.user._id
+  }).then((todos)  => {
       return res.send({todos});   // send back ES6  shortcut of { "todos" : todos}  Object contains "todos" array of todos
   }, (e) => {
       return res.status(400).send(e);   // send  back 400 (not found) error
@@ -98,51 +106,55 @@ app.get('/todos',      (req,res) => {
      //                             { "todos": [] }
 
 //
-///  New paragraph: How to fetch individual ID.
-// GET /todos/59848628ba4e4e0e3c5c4f5b     -  route to fetch individual _Id  59848628ba4e4e0e3c5c4f5b
-//   part of the  URL is dynamic
-app.get('/todos/:id', (req, res) => {
-   var id = req.params.id;   // got the id variable from GET HTTP request.
-  //  res.send(req.params);    // DEBUG: variable id should be initialized by dynamic id  in req.params object.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///   Fetch individual ID.   |  Part2  Adaptation to  authenticate
+///   GET /todos/59848628ba4e4e0e3c5c4f5b     -  route to fetch individual _Id  59848628ba4e4e0e3c5c4f5b
+///   part of the  URL is dynamic
+/// My guess regarding   authentication:
+///  additional compare _creator: _id of the todo  and  the  token
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+app.get('/todos/:id', authenticate, (req, res) => {
+   var id = req.params.id;   // got the id variable from GET HTTP request. (/todos/:id)
   // Valid id using isValid
   if( !ObjectID.isValid(id)) {
-       // console.log(`ObjectID.isValid?  Id ${id} not valid`);
        return res.status(404).send({});// Status 404 , and  send back empty set
   };
-  // console.log(`ObjectID.isValid?  Id ${id} is valid`);
-    // 404 - send back empty set
-    // findById
-      // success
-          // if todo - send it back
-          // if no todo - send back  404 with an empty body
-      // error
-          // 400 - and send empty body back
-    Todo.findById(id).then((todo) => {
+   // authentication: findById(id) in the collection  replaced by findOne( ... _id , _creator )
+    Todo.findOne({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo) => {
       if(!todo) {
-         // console.log(`Error: ID ${id} todo is not found`);
+        // 404 - send back empty set
           return res.status(404).send();// Status 404 , and  send back empty set
       }
-        // console.log('Todo findById ', todo);
+      // success  ---  if todo - send it back
         res.status(200).send({todo})
-      }).catch((e) => {
+      }).catch((e) => {        // error
+        // 400 - and send empty body back
         return res.status(400).send();
       });
 
 });
 
+///////////////////////////////////////////////////////////////////////////////////////
 // Challeng from Lecture 82  section  7
 //  Delete todo by _id  from MongoDB
-//
-app.delete('/todos/:id', ( req, res ) => {
+//  Adding  authenticate
+/////////////////////////////////////////////////////////////////////////////////////////
+app.delete('/todos/:id', authenticate,  ( req, res ) => {
       // get the id
       var id = req.params.id;   // got the id variable from GET HTTP request.
       // validate the id -> not valid ? return 404
       if( !ObjectID.isValid(id)) {
-           // console.log(`ObjectID.isValid?  Id ${id} not valid`);
            return res.status(404).send({});// Status 404 , and  send back empty set
       };
       // remove todo by id
-      Todo.findByIdAndRemove(id).then((todo) => {
+      // for authenticate:  findByIdAndRemove  replaced by findOneAndRemove (mongoose methods)
+      Todo.findOneAndRemove({
+        _id : id,
+        _creator : req.user._id
+      }).then((todo) => {
            // success
             if(!todo) {
                  // if no doc, send 404
@@ -150,17 +162,26 @@ app.delete('/todos/:id', ( req, res ) => {
             }
             // if doc, send doc back with 200
             res.status(200).send({todo});
-        }).catch((e) => {
-             // error
+        }).catch((e) => {       // error
              // 400 with empty body
             res.status(400).send();
        });
 });
 
-// Update  REST  API . HTTP  PATCH request.
-
-app.patch('/todos/:id',( req, res) => {
-
+///////////////////////////////////////////////////////////////////////////////////////////
+///  PATCH /todos/:id   aka  UPDATE totdo
+///  Adapted to authentication
+/// 1. Add 'authenticate' middleware (server.js)
+/// 2. Update route  PATCH /todos/:id  (server.js) with
+///    changes in mongoose query,  regarding mongoose find  method:
+///     findOneAndUpdate
+///              _id : id,
+///               _creator : req.user._id
+///  3.  Update tests-case ( server.test.js )
+///     .set('x-auth', users[1].tokens[0].token) //  SET x-auth header from "seed" user
+///////////////////////////////////////////////////////////////////////////////////////////
+//  PATCH  /todos/:id   request.
+app.patch('/todos/:id', authenticate, ( req, res) => {
   var id = req.params.id;
   var body = _.pick(req.body, ['text','completed']);   // Lowdash library function.
   // Picks up "text" and "completed" properties from JSON object.
@@ -175,8 +196,11 @@ app.patch('/todos/:id',( req, res) => {
           body.completed = false;  //
           body.completedAt = null ; //
       }
-
-      Todo.findByIdAndUpdate(id,  {$set: body}, {new: true}).then((todo) => {
+      // authentication: findByIdAndUpdate() replaced by  findOneAndUpdate()
+      Todo.findOneAndUpdate( {
+        _id: id,
+        _creator : req.user._id  // thanks to authenticate() middleware
+      },  {$set: body}, {new: true}).then((todo) => {
         // Check if the todo object exist.
         if(!todo) {
           return res.status(404).send();
@@ -186,9 +210,11 @@ app.patch('/todos/:id',( req, res) => {
          res.status(400).send();
       });
 
+});   // End of Update   PATCH request.
 
-});   // End of Update  REST  API . HTTP  PATCH request.
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Users  Section
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Challenge: Section 8 , Lecture 88.
 // Create new User   POST /users
 // Combine   POST    /todos route code.

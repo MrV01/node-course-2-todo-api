@@ -26,7 +26,7 @@ var authenticate = (req, res, next) => {
     next();  // Continue to the next ExpressJS route
   }).catch((e) => {
       res.status(401).send(); // authentication required
-      // NO next()  because of hte error
+      // NO GO  next()  because of the error
   });
 };
 
