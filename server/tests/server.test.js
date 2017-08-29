@@ -274,13 +274,13 @@ describe( 'PATCH /todos/:id', () => {
     // update text, set completed false
     var modText = todos[1].text + " PATCH2";
     var modCompleted = false;
-    // 200
-    // Call request
+
+    // Call request  - super test
     request(app)
       .patch(`/todos/${hexId}`)
       .set('x-auth', users[1].tokens[0].token) //  SET x-auth header from "seed" user
       .send( { "text" : modText , "completed" :   modCompleted } )
-      .expect(200)
+      .expect(200)   // 200
       .expect(( res) => {
         // text is changed, completed is false, completedAt is null  .toNotExist
         expect(res.body.todo._id).toBe(hexId);

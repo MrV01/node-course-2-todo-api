@@ -70,7 +70,7 @@ UserSchema.methods.generateAuthToken = function () {
     var user = this;   // particular document in users collection
     var access = 'auth';
     // now sign the token
-    var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString(); // Later we will move 'abc123' secret to config file
+    var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString(); // Later we will move 'abc123' secret to config file
     // add token object to the array of tokens
     user.tokens.push({access,token});  // ES6 syntax
     return user.save().then( () => {  // save() returns Promise
@@ -103,7 +103,7 @@ UserSchema.statics.findByToken = function (token) {
   var decoded;
 
     try {
-      decoded = jwt.verify(token,'abc123')
+      decoded = jwt.verify(token,process.env.JWT_SECRET)
     } catch (e) {
       // return new Promise((resolve, reject) => {
       //       reject(); // Promise.reject will guarantee that ancestor's .then() will never fired.
