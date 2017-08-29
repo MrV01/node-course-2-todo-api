@@ -21,7 +21,7 @@ var Todo = mongoose.model('Todo', {  // Very basic cofig here see docs for many 
      type: Number,
      default: null  // validator  default value
    },
-   //// Added "Creator" field to the documents. For Authentication purposes.
+
    _creator: {
         //  According to the Instructor:  "Creator" data type of ObjectId.
         // http://mongoosejs.com/docs/api.html#schema-objectid-js
@@ -29,6 +29,7 @@ var Todo = mongoose.model('Todo', {  // Very basic cofig here see docs for many 
         type: mongoose.Schema.Types.ObjectId,
         required: true
    }
+   
 });
 
 // Exporrt the model.
